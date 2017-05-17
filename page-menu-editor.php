@@ -19,95 +19,126 @@ With thanks to Mark Anderson for the debugging.
 defined( 'ABSPATH' ) or die( 'No script kiddies please!' );
 
 class PageMenuEditor {
-	var $version;
+    /**
+     * Stores the user's current version in case we need to update something
+     * @private type string
+     */
+    private $version;
+    
+    var $wpdb;
+    
+    var $wp_version;
 
-	function __construct() {
-		$this->version = "2.1.3";
-		add_action('init', array(&$this, 'plugin_update'),1);
-		add_filter('wp_list_pages', array(&$this, 'filter_pages'), 1);
+    function __construct( $wpdb, $wp_version ) {
+        $this->version = "2.1.3";
+        $this->wpdb = $wpdb;
+        $this->wp_version = $wp_version;
+        
+        add_action( 'init', [ $this, 'plugin_update' ], 1 );
+        add_filter( 'wp_list_pages', [ $this, 'filter_pages' ], 1 );
 
-		add_action('edit_post', array(&$this, 'pme_update'));
-		add_action('save_post', array(&$this, 'pme_update'));
-		add_action('publish_post', array(&$this, 'pme_update'));
+        add_action( 'edit_post', [ $this, 'pme_update' ] );
+        add_action( 'save_post', [ $this, 'pme_update' ] );
+        add_action('publish_post', [ $this, 'pme_update' ] );
 
-		/* Use the admin_menu action to define the custom boxes */
-		add_action('admin_menu', array(&$this, 'add_custom_box'));
-		add_action('admin_menu', array(&$this, 'options_menu'));
-	}
+        /* Use the admin_menu action to define the custom boxes */
+        add_action( 'admin_menu', [ $this, 'add_custom_box' ] );
+        add_action( 'admin_menu', [ $this, 'options_menu' ] );
+    }
 
-	function plugin_update() {
-		$theversion = get_option('dsa_pme_version');
-		if (empty($theversion) || version_compare($theversion, '2.1.1') == -1) :
-			$this->migrate('menulabel', 'title_attrib');
-			update_option('dsa_pme_version', '2.1.3');
-		endif;
-	}
+    protected function plugin_update() {
+        $theversion = get_option( 'dsa_pme_version' );
+        if ( empty( $theversion ) || version_compare( $theversion, '2.1.1' ) == -1 ) :
+            $this->migrate( 'menulabel', 'title_attrib' );
+            update_option( 'dsa_pme_version', '2.1.3' );
+        endif;
+    }
 
-	/* the main wp_list_pages() filter */
-	function callback($matches) {
-		global $wpdb, $wp_version;
+    /* the main wp_list_pages() filter */
+    function callback( $matches )
+    {
+        if ( $this->wp_version >= 3.3 )  :
+            $t = 4;
+        else :
+            $t = 5;
+        endif;
 
-		if ($wp_version >= 3.3) $t = 4;
-		else $t = 5;
+        if ( $matches[ 1 ] && ! empty( $matches[ 1 ] ) ) :
+            $postID = $matches[1];
+        endif;
 
-		if ($matches[1] && !empty($matches[1])) $postID = $matches[1];
+        if ( empty( $postID ) ) :
+            $postID = get_option( "page_on_front" );
+        endif;
 
-		if (empty($postID)) $postID = get_option("page_on_front");
+        $menu_label = $title_attribute = "";
+        
+        // now identifier is the post ID
+        @$pgmenueditor = get_post_meta( $postID, 'dsa_pagemenueditor' );
+        
+        if ( ! empty( $pgmenueditor[ 0 ] ) && count( $pgmenueditor[ 0 ] ) ) :
+            $title_attribute = stripslashes( $pgmenueditor[ 0 ][ 'title_attribute' ] );
+            $menu_label = stripslashes( $pgmenueditor[ 0 ][ 'menu_label' ] );
+        endif;
 
-		$menu_label = $title_attribute = "";
-		// now identifier is the post ID
-		@$pgmenueditor = get_post_meta($postID, 'dsa_pagemenueditor');
-		if (!empty($pgmenueditor[0]) && count($pgmenueditor[0])) :
-			$title_attribute = stripslashes($pgmenueditor[0]['title_attribute']);
-			$menu_label = stripslashes($pgmenueditor[0]['menu_label']);
-		endif;
+        if ( preg_match( '@^<([^>]+)>([^<]+)<([^>]+)>$@is', $matches[ $t ], $anchort ) ) :
+            $link_before = '<' . $anchort[1] . '>';
+            $link_after = '<' . $anchort[3] . '>';
+            $anchortxt = $anchort[2];
+        else :
+            $anchortxt = $matches[ $t ];
+            $link_before = $link_after = "";
+        endif;
 
-		if (preg_match('@^<([^>]+)>([^<]+)<([^>]+)>$@is', $matches[$t], $anchort)) :
-			$link_before = "<".$anchort[1].">";
-			$link_after = "<".$anchort[3].">";
-			$anchortxt = $anchort[2];
-		else :
-			$anchortxt = $matches[$t];
-			$link_before = $link_after = "";
-		endif;
+        if ( empty( $menu_label ) ) :
+            $menu_label = $anchortxt;
+        endif;
 
-		if (empty($menu_label)) $menu_label = $anchortxt;
+        if ( $title_attribute == "%%pagetitle%%" ) :
+            $title_attribute = get_the_title( $postID );
+        elseif ( $title_attribute == "%%menulabel%%" ) :
+            $title_attribute = $menu_label;
+        endif;
 
-		if ($title_attribute == "%%pagetitle%%") $title_attribute = get_the_title($postID);
-		elseif ($title_attribute == "%%menulabel%%") $title_attribute = $menu_label;
+        if ( ! empty( $title_attribute ) ) :
+            $filtered = '<li class="page_item page-item-' . $postID . $matches[ 2 ] . '"><a href="' . $matches[ 3 ] . '" title="' . $title_attribute . '">' . $link_before . $menu_label . $link_after . '</a>';
+        else :
+            $filtered = '<li class="page_item page-item-' . $postID . $matches[ 2 ] . '"><a href="' . $matches[ 3 ] . '">' . $link_before . $menu_label . $link_after . '</a>';
+        endif;
 
-		if (!empty($title_attribute)) :
-			$filtered = '<li class="page_item page-item-'.$postID.$matches[2].'"><a href="'.$matches[3].'" title="'.$title_attribute.'">'.$link_before.$menu_label.$link_after.'</a>';
-		else :
-			$filtered = '<li class="page_item page-item-'.$postID.$matches[2].'"><a href="'.$matches[3].'">'.$link_before.$menu_label.$link_after.'</a>';
-		endif;
+        return $filtered;
+    }
 
-		return $filtered;
-	}
+   function filter_pages( $content ) {
 
-	function filter_pages($content) {
-		global $wp_version;
+        if ( $this->wp_version >= 3.3 ) :
+            $pattern = '@<li class="page_item page-item-(\d+)([^\"]*)"><a href=\"([^\"]+)">(.*?)</a>@is';
+        else :
+            $pattern = '@<li class="page_item page-item-(\d+)([^\"]*)"><a href=\"([^\"]+)" title="([^\"]+)">(.*?)</a>@is';
+        endif;
 
-		if ($wp_version >= 3.3)	$pattern = '@<li class="page_item page-item-(\d+)([^\"]*)"><a href=\"([^\"]+)">(.*?)</a>@is';
-		else $pattern = '@<li class="page_item page-item-(\d+)([^\"]*)"><a href=\"([^\"]+)" title="([^\"]+)">(.*?)</a>@is';
+        return preg_replace_callback( $pattern, [ $this, 'callback' ], $content );
+    }
 
-		return preg_replace_callback($pattern, array($this, 'callback'), $content);
-	}
+    /* Adds a custom section to the "advanced" Post and Page edit screens */
+    function add_custom_box() {
+        if( function_exists( 'add_meta_box' )) :
+            add_meta_box( 'pgmenueditor', __( 'Page Menu Editor' ), [ $this, 'custom_box' ], 'page', 'advanced', 'high' );
+        endif;
+    }
 
-	/* Adds a custom section to the "advanced" Post and Page edit screens */
-	function add_custom_box() {
-            if( function_exists( 'add_meta_box' ))
-    		add_meta_box( 'pgmenueditor', 'Page Menu Editor', array(&$this, 'custom_box'), 'page', 'advanced', 'high' );
-	}
+    /* Prints the inner fields for the custom post/page section */
+    function custom_box( $post ) {
+        // The actual fields for data entry
 
-	/* Prints the inner fields for the custom post/page section */
-	function custom_box() {
-		// The actual fields for data entry
-		global $post;
-
-		$pgmenueditor = get_post_meta($post->ID, 'dsa_pagemenueditor');
-		@$title_attribute = stripslashes($pgmenueditor[0]['title_attribute']);
-		@$menu_label = stripslashes($pgmenueditor[0]['menu_label']);
+        $pgmenueditor = get_post_meta( $post->ID, 'dsa_pagemenueditor' );
+        
+        if( count( $pgmenueditor ) ) :
+            $title_attribute = stripslashes( $pgmenueditor[ 0 ][ 'title_attribute' ] );
+            $menu_label = stripslashes( $pgmenueditor[ 0 ][ 'menu_label' ] );
+        else :
+            $title_attribute = $menu_label = "";
+        endif;
 ?>
         <div class="inside">
 			<table class="form-table">
@@ -126,80 +157,86 @@ class PageMenuEditor {
         	</table>
         </div>
 <?php
-	}
+    }
 
-	function pme_update($post_id) {
-		// verify this came from the our screen and with proper authorization,
-		// because save_post can be triggered at other times
-		// Check its not an auto save
-		if ( defined('DOING_AUTOSAVE') && DOING_AUTOSAVE )
-			return $post_id;
+    function pme_update($post_id) {
+        // verify if this is an auto save routine. 
+        // If it is our form has not been submitted, so we dont want to do anything
+        if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE )
+            return;
 
-		// Check your data has been sent - this helps verify that we intend to process our metabox
-		if (!isset($_POST['dsa_pme_noncename']) || !check_admin_referer('dsa_pme_nonce', 'dsa_pme_noncefield'))
-                    return $post_id;
+        // verify this came from the our screen and with proper authorization,
+        // because save_post can be triggered at other times
+        if ( !isset( $_POST['dsa_pme_noncename'] ) )
+            return;
 
-		if ('page' == $_POST['post_type'] ) {
-                    if (!current_user_can('edit_page', $post_id)) {
-                        return $post_id;
-                    }
-                } else {
-                    return $post_id;
-		}
+        if ( !wp_verify_nonce( $_POST['dsa_pme_noncename'], basename( __FILE__ ) ) )
+            return;
+        
+        if ( 'page' == $_POST['post_type'] ) {
+            if ( ! current_user_can( 'edit_page', $post_id ) ) {
+                return;
+            }
+        } else {
+            return;
+        }
 
-                // sanitize the attribute just in case. You don't want HTML in that!
-		$attribute = filter_var($_POST['title_attrib'], FILTER_SANITIZE_STRING);
-		$label = $_POST['menulabel'];
+        // sanitize the attribute just in case. You don't want HTML in that!
+        $attribute = filter_var( $_POST['title_attrib'], FILTER_SANITIZE_STRING );
+        $label = $_POST['menulabel'];
 
-		$pme_detail = array("menu_label" => $label, "title_attribute" => $attribute);
+        $pme_detail = array( "menu_label" => $label, "title_attribute" => $attribute );
 
-		update_post_meta($post_id, 'dsa_pagemenueditor', $pme_detail);
-	}
+        update_post_meta( $post_id, 'dsa_pagemenueditor', $pme_detail );
+    }
 
-	function options_menu() {
-		add_options_page('Page Menu Editor', 'Page Menu Editor', 'update_plugins', 'pg-menu-editor-upgrade', array(&$this, 'options'));
-	}
+    function options_menu() {
+        add_options_page( 'Page Menu Editor', 'Page Menu Editor', 'update_plugins', 'pg-menu-editor-upgrade', [ $this, 'options' ] );
+    }
 
-	/*
-	 * Migrate function from the old system. Kept in for 2.1.1 as some issues cropped up for 2.1 for some users
-	 * Thanks to Mark Anderson for spotting it and helping with the testing.
-	 */
-    function migrate($label, $attribute) {
-        global $wpdb;
-        $results = $wpdb->get_results("SELECT post_id, meta_key, meta_value FROM {$wpdb->postmeta} WHERE meta_key = '{$attribute}' OR meta_key = '{$label}' GROUP BY post_id");
-        foreach ($results AS $result) :
-            if ($result->meta_key == $attribute) :
+    /*
+     * Migrate function from the old system. Kept in for 2.1.1 as some issues cropped up for 2.1 for some users
+     * Thanks to Mark Anderson for spotting it and helping with the testing.
+     */
+    private function migrate( $label, $attribute )
+    {
+        $results = $this->wpdb->get_results( $this->wpdb->prepare( "SELECT post_id, meta_key, meta_value FROM " . $this->wpdb->postmeta . " WHERE meta_key = %s OR meta_key = %s GROUP BY post_id", $attribute, $label ) );
+        foreach ( $results AS $result ) :
+            if ( $result->meta_key == $attribute ) :
                 $check = $label;
                 $title_attribute = $result->meta_value;
             else :
                 $check = $attribute;
                 @$menu_label = $result->meta_value;
             endif;
-            $lbl = $wpdb->get_row("SELECT meta_value FROM {$wpdb->postmeta} WHERE meta_key = '{$check}' AND post_id = ".$result->post_id);
-            if ($result->meta_key == $attribute) :
+            
+            $lbl = $this->wpdb->get_row( $this->wpdb->prepare( "SELECT meta_value FROM {$wpdb->postmeta} WHERE meta_key = %s AND post_id = %d", $check, $result->post_id ) );
+            if ( $result->meta_key == $attribute ) :
                 $menu_label = $lbl->meta_value;
             else :
                 @$title_attribute = $lbl->meta_value;
             endif;
 
-            $details = array("menu_label" => $menu_label, "title_attribute" => $title_attribute);
-            update_post_meta($result->post_id, 'dsa_pagemenueditor', $details);
-            delete_post_meta($result->post_id, $attribute);
-            delete_post_meta($result->post_id, $label);
+            $details = [ "menu_label" => $menu_label, "title_attribute" => $title_attribute ];
+            update_post_meta( $result->post_id, 'dsa_pagemenueditor', $details );
+            delete_post_meta( $result->post_id, $attribute );
+            delete_post_meta( $result->post_id, $label );
 	endforeach;
 
 	return true;
     }
 
-    function options() {
+    protected function options()
+    {
 
-	if (isset($_POST['pta_migrate'])) :
-		if ($this->migrate('_aioseop_menulabel', '_aioseop_titleatr')) :
-			$msg = "The migration is complete.";
-		else :
-			$msg = "Error during the migration process, please try again.";
-		endif;
-		echo "<div class='fade'><p>The migration is complete.</p></div>\n";
+	if ( isset( $_POST['pta_migrate'] ) ) :
+            if ( $this->migrate( '_aioseop_menulabel', '_aioseop_titleatr' ) ) :
+                $msg = "The migration is complete.";
+            else :
+                $msg = "Error during the migration process, please try again.";
+            endif;
+            
+            echo "<div class='fade'><p>The migration is complete.</p></div>\n";
 	endif;
 
 	?>
@@ -218,7 +255,7 @@ class PageMenuEditor {
 	    <p>If you want to say thanks then a link back or comment on my site to let me know you like a plugin is more
 	    than enough. Alternatively you're welcome to make a donation to help with the upkeep of this and other plugins via PayPal! :)</p>
 
-		<form action="https://www.paypal.com/cgi-bin/webscr" method="post">
+            <form action="https://www.paypal.com/cgi-bin/webscr" method="post">
 		<div>
 		<input type="hidden" name="cmd" value="_donations">
 		<input type="hidden" name="business" value="sarah@aislinks.com">
@@ -233,11 +270,11 @@ class PageMenuEditor {
 		<input type="image" src="https://www.paypal.com/en_GB/i/btn/btn_donate_SM.gif" name="submit" alt="PayPal - The safer, easier way to pay online.">
 		<img alt="" src="https://www.paypal.com/en_GB/i/scr/pixel.gif" width="1" height="1">
 		</div>
-		</form>
+            </form>
 
     	</div>
 <?php
     }
 }
 
-$pagemenueditor = new PageMenuEditor();
+$pagemenueditor = new PageMenuEditor( $wpdb, $wp_version );
