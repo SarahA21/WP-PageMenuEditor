@@ -4,7 +4,7 @@ Plugin Name: Page Menu Editor
 Plugin URI: http://www.stuffbysarah.net/wordpress-plugins/page-menu-editor/
 Description: Allows you to customise the title attribute and menu label of each page link in wp_list_pages() or wp_page_menu().
 Author: Sarah Anderson
-Version: 2.1.3
+Version: 3.0
 Author URI: http://www.stuffbysarah.net/
 
 This plugin is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License
@@ -30,16 +30,16 @@ class PageMenuEditor {
     var $wp_version;
 
     function __construct( $wpdb, $wp_version ) {
-        $this->version = "2.1.3";
+        $this->version = "3.0";
         $this->wpdb = $wpdb;
         $this->wp_version = $wp_version;
         
         add_action( 'init', [ $this, 'plugin_update' ], 1 );
         add_filter( 'wp_list_pages', [ $this, 'filter_pages' ], 1 );
 
-        add_action( 'edit_post', [ $this, 'pme_update' ] );
-        add_action( 'save_post', [ $this, 'pme_update' ] );
-        add_action('publish_post', [ $this, 'pme_update' ] );
+        add_action( 'edit_post', [ $this, 'pg_update' ] );
+        add_action( 'save_post', [ $this, 'pg_update' ] );
+        add_action( 'publish_post', [ $this, 'pg_update' ] );
 
         /* Use the admin_menu action to define the custom boxes */
         add_action( 'admin_menu', [ $this, 'add_custom_box' ] );
@@ -168,19 +168,22 @@ class PageMenuEditor {
 <?php
     }
 
-    function pme_update($post_id) {
+    function pg_update( $post_id ) {
         // verify if this is an auto save routine. 
         // If it is our form has not been submitted, so we dont want to do anything
-        if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE )
+        if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) {
             return;
+        }
 
         // verify this came from the our screen and with proper authorization,
         // because save_post can be triggered at other times
-        if ( !isset( $_POST['dsa_pme_noncename'] ) )
+        if ( ! isset( $_POST['dsa_pme_noncefield'] ) ) {
             return;
+        }
 
-        if ( !wp_verify_nonce( $_POST['dsa_pme_noncename'], basename( __FILE__ ) ) )
+        if ( ! wp_verify_nonce( $_POST['dsa_pme_noncefield'], 'dsa_pme_nonce' ) ) {
             return;
+        }
         
         if ( 'page' == $_POST['post_type'] ) {
             if ( ! current_user_can( 'edit_page', $post_id ) ) {
