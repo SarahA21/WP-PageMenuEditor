@@ -46,7 +46,7 @@ class PageMenuEditor {
         add_action( 'admin_menu', [ $this, 'options_menu' ] );
     }
 
-    protected function plugin_update() {
+    function plugin_update() {
         $theversion = get_option( 'dsa_pme_version' );
         if ( empty( $theversion ) || version_compare( $theversion, '2.1.1' ) == -1 ) :
             $this->migrate( 'menulabel', 'title_attrib' );
@@ -55,7 +55,7 @@ class PageMenuEditor {
     }
 
     /* the main wp_list_pages() filter */
-    function callback( $matches )
+    private function callback( $matches )
     {
         if ( $this->wp_version >= 3.3 )  :
             $t = 4;
@@ -128,6 +128,11 @@ class PageMenuEditor {
     }
 
     /* Prints the inner fields for the custom post/page section */
+    /**
+     * This prints out a section for menu label and title attribute
+     * 
+     * @param object $post
+     */
     function custom_box( $post ) {
         // The actual fields for data entry
 
@@ -141,20 +146,24 @@ class PageMenuEditor {
         endif;
 ?>
         <div class="inside">
-			<table class="form-table">
-				<tr><th scope="row"><label for="menulabel">Page Menu Label: </label></th>
-				<td>
-					<input type="text" name="menulabel" value="<?php echo $menu_label ?>" id="menulabel" style="width: 90%">
-        			<p>Specify a menu label for the page link in the navigation.</p>
-        		</td></tr>
-				<tr><th><label for="title_attrib">Page Link Title Attribute: </label></th>
-				<td>
-					<input type="text" name="title_attrib" value="<?php echo $title_attribute ?>" id="title_attrib" style="width: 90%">
-        			<p>Specify a title attribute for the page link in the navigation to help with usability and accessibility.</p>
-        			<p><em>(Use %%pagetitle%% to use the page title or %%menulabel%% to use the menu label).</em></p>
-                                <?php wp_nonce_field( 'dsa_pme_nonce', 'dsa_pme_noncefield' ); // include a nonce for security ?>
-        		</td></tr>
-        	</table>
+            <table class="form-table">
+                <tr>
+                    <th scope="row"><label for="menulabel">Page Menu Label: </label></th>
+                    <td>
+                        <input type="text" name="menulabel" value="<?php echo $menu_label ?>" id="menulabel" style="width: 90%">
+                        <p>Specify a menu label for the page link in the navigation.</p>
+                    </td>
+                </tr>
+                <tr>
+                    <th><label for="title_attrib">Page Link Title Attribute: </label></th>
+                    <td>
+                        <input type="text" name="title_attrib" value="<?php echo $title_attribute ?>" id="title_attrib" style="width: 90%">
+                        <p>Specify a title attribute for the page link in the navigation to help with usability and accessibility.</p>
+                        <p><em>(Use %%pagetitle%% to use the page title or %%menulabel%% to use the menu label).</em></p>
+                        <?php wp_nonce_field( 'dsa_pme_nonce', 'dsa_pme_noncefield' ); // include a nonce for security ?>
+                    </td>
+                </tr>
+            </table>
         </div>
 <?php
     }
@@ -226,7 +235,7 @@ class PageMenuEditor {
 	return true;
     }
 
-    protected function options()
+    function options()
     {
 
 	if ( isset( $_POST['pta_migrate'] ) ) :
