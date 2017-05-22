@@ -21,14 +21,27 @@ defined( 'ABSPATH' ) or die( 'No script kiddies please!' );
 class PageMenuEditor {
     /**
      * Stores the user's current version in case we need to update something
-     * @private type string
+     * @private string
      */
     private $version;
     
+    /**
+     * Holds the WPDB class
+     * @var handle 
+     */
     var $wpdb;
     
-    var $wp_version;
+    /**
+     * Holds the current WP Version
+     * @var string
+     */
+    private $wp_version;
 
+    /**
+     * Constructor the class, set up the actions and filters
+     * @param handle $wpdb
+     * @param string $wp_version
+     */
     function __construct( $wpdb, $wp_version ) {
         $this->version = "3.0";
         $this->wpdb = $wpdb;
@@ -46,15 +59,22 @@ class PageMenuEditor {
         add_action( 'admin_menu', [ $this, 'options_menu' ] );
     }
 
+    /**
+     * Method to check if we need to update the existing data
+     */
     function plugin_update() {
         $theversion = get_option( 'dsa_pme_version' );
         if ( empty( $theversion ) || version_compare( $theversion, '2.1.1' ) == -1 ) :
             $this->migrate( 'menulabel', 'title_attrib' );
-            update_option( 'dsa_pme_version', '2.1.3' );
+            update_option( 'dsa_pme_version', $this->version );
         endif;
     }
 
-    /* the main wp_list_pages() filter */
+    /**
+     * Check menu item and replace if setting found
+     * @param array $matches        contains the parts of the list item
+     * @return string               returns list item for menu
+     */
     private function callback( $matches )
     {
         if ( $this->wp_version >= 3.3 )  :
@@ -109,7 +129,12 @@ class PageMenuEditor {
         return $filtered;
     }
 
-   function filter_pages( $content ) {
+    /**
+     * Loops through menu items for pages
+     * @param type $content
+     * @return type
+     */
+    function filter_pages( $content ) {
 
         if ( $this->wp_version >= 3.3 ) :
             $pattern = '@<li class="page_item page-item-(\d+)([^\"]*)"><a href=\"([^\"]+)">(.*?)</a>@is';
@@ -120,18 +145,19 @@ class PageMenuEditor {
         return preg_replace_callback( $pattern, [ $this, 'callback' ], $content );
     }
 
-    /* Adds a custom section to the "advanced" Post and Page edit screens */
+    /**
+     * Adds a custom section to the "advanced" Page edit screens
+     */
     function add_custom_box() {
         if( function_exists( 'add_meta_box' )) :
             add_meta_box( 'pgmenueditor', __( 'Page Menu Editor' ), [ $this, 'custom_box' ], 'page', 'advanced', 'high' );
         endif;
     }
 
-    /* Prints the inner fields for the custom post/page section */
     /**
      * This prints out a section for menu label and title attribute
      * 
-     * @param object $post
+     * @param object $post  contains the post object
      */
     function custom_box( $post ) {
         // The actual fields for data entry
@@ -168,6 +194,11 @@ class PageMenuEditor {
 <?php
     }
 
+    /**
+     * Method to save the fields when the edit page is saved
+     * @param int $post_id
+     * @return bool false   returned when the page is not permitted to be edited
+     */
     function pg_update( $post_id ) {
         // verify if this is an auto save routine. 
         // If it is our form has not been submitted, so we dont want to do anything
@@ -202,13 +233,19 @@ class PageMenuEditor {
         update_post_meta( $post_id, 'dsa_pagemenueditor', $pme_detail );
     }
 
+    /**
+     * Function to create the options menu page
+     */
     function options_menu() {
         add_options_page( 'Page Menu Editor', 'Page Menu Editor', 'update_plugins', 'pg-menu-editor-upgrade', [ $this, 'options' ] );
     }
 
-    /*
+    /**
      * Migrate function from the old system. Kept in for 2.1.1 as some issues cropped up for 2.1 for some users
      * Thanks to Mark Anderson for spotting it and helping with the testing.
+     * 
+     * @param string $label         Menu label
+     * @param string $attribute     Link Attribute
      */
     private function migrate( $label, $attribute )
     {
@@ -238,6 +275,9 @@ class PageMenuEditor {
 	return true;
     }
 
+    /**
+     * Options page and functionality
+     */
     function options()
     {
 
