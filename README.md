@@ -6,6 +6,7 @@ Tags: pages, static, cms, sidebar, seo
 Requires at least: 2.5  
 Tested up to: 4.7.5  
 Stable tag: 3.0  
+
 License: GPLv2 or later  
 License URI: http://www.gnu.org/licenses/gpl-2.0.html  
 
@@ -138,4 +139,7 @@ Then you don't need this plugin as you can control the anchor text and title att
 
 ## Support
 
-Support is provided at http://www.stuffbysarah.net/wordpress-plugins/page-menu-editor/
+Support is provided at any of the following
+https://wordpress.org/support/plugin/page-menu-editor
+https://github.com/SarahA21/WP-PageMenuEditor
+http://www.stuffbysarah.net/wordpress-plugins/page-menu-editor/
