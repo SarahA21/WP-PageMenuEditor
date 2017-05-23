@@ -4,8 +4,9 @@ Contributors: sarahg111
 Donate link: http://www.stuffbysarah.net/wordpress-plugins/#donate  
 Tags: pages, static, cms, sidebar, seo  
 Requires at least: 2.5  
-Tested up to: 3.8.1  
-Stable tag: 2.1.2  
+Tested up to: 4.7.5  
+Stable tag: 3.0  
+
 License: GPLv2 or later  
 License URI: http://www.gnu.org/licenses/gpl-2.0.html  
 
@@ -49,6 +50,12 @@ Then you don't need this plugin as you can control the anchor text and title att
 1. Screenshot of the additional text fields
 
 ## Changelog
+
+### 3.0
+
+* Modernised the WordPress code in use
+* Tidied up the PHP code
+* Formatted code to adhere to WordPress coding standards
 
 ### 2.1.2
 
@@ -132,4 +139,7 @@ Then you don't need this plugin as you can control the anchor text and title att
 
 ## Support
 
-Support is provided at http://www.stuffbysarah.net/wordpress-plugins/page-menu-editor/
+Support is provided at any of the following
+https://wordpress.org/support/plugin/page-menu-editor
+https://github.com/SarahA21/WP-PageMenuEditor
+http://www.stuffbysarah.net/wordpress-plugins/page-menu-editor/
