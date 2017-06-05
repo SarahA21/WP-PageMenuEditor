@@ -137,4 +137,8 @@ Then you don't need this plugin as you can control the anchor text and title att
 
 == Support ==
 
-Support is provided at http://www.stuffbysarah.net/wordpress-plugins/page-menu-editor/
+
+Support is provided at any of the following  
+https://wordpress.org/support/plugin/page-menu-editor  
+https://github.com/SarahA21/WP-PageMenuEditor  
+http://www.stuffbysarah.net/wordpress-plugins/page-menu-editor/
