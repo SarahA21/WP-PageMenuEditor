@@ -4,7 +4,7 @@ Plugin Name: Page Menu Editor
 Plugin URI: http://www.stuffbysarah.net/wordpress-plugins/page-menu-editor/
 Description: Allows you to customise the title attribute and menu label of each page link in wp_list_pages() or wp_page_menu().
 Author: Sarah Anderson
-Version: 3.0
+Version: 3.0.1
 Author URI: http://www.stuffbysarah.net/
 
 This plugin is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License
