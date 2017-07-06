@@ -4,8 +4,8 @@ Contributors: sarahg111
 Donate link: http://www.stuffbysarah.net/wordpress-plugins/#donate  
 Tags: pages, static, cms, sidebar, seo  
 Requires at least: 2.5  
-Tested up to: 4.7.5  
-Stable tag: 3.0  
+Tested up to: 4.8  
+Stable tag: 3.0.1  
 
 License: GPLv2 or later  
 License URI: http://www.gnu.org/licenses/gpl-2.0.html  
@@ -50,6 +50,11 @@ Then you don't need this plugin as you can control the anchor text and title att
 1. Screenshot of the additional text fields
 
 ## Changelog
+
+### 3.0.1
+
+* Reverted from square bracket array syntax to PHP5.3 friendly array()
+* Bug fix
 
 ### 3.0
 
