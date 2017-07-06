@@ -4,7 +4,7 @@ Plugin Name: Page Menu Editor
 Plugin URI: http://www.stuffbysarah.net/wordpress-plugins/page-menu-editor/
 Description: Allows you to customise the title attribute and menu label of each page link in wp_list_pages() or wp_page_menu().
 Author: Sarah Anderson
-Version: 3.0
+Version: 3.0.1
 Author URI: http://www.stuffbysarah.net/
 
 This plugin is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License
@@ -47,16 +47,16 @@ class PageMenuEditor {
         $this->wpdb = $wpdb;
         $this->wp_version = $wp_version;
         
-        add_action( 'init', [ $this, 'plugin_update' ], 1 );
-        add_filter( 'wp_list_pages', [ $this, 'filter_pages' ], 1 );
+        add_action( 'init', array( $this, 'plugin_update' ), 1 );
+        add_filter( 'wp_list_pages', array( $this, 'filter_pages' ), 1 );
 
-        add_action( 'edit_post', [ $this, 'pg_update' ] );
-        add_action( 'save_post', [ $this, 'pg_update' ] );
-        add_action( 'publish_post', [ $this, 'pg_update' ] );
+        add_action( 'edit_post', array( $this, 'pg_update' ) );
+        add_action( 'save_post', array( $this, 'pg_update' ) );
+        add_action( 'publish_post', array( $this, 'pg_update' ) );
 
         /* Use the admin_menu action to define the custom boxes */
-        add_action( 'admin_menu', [ $this, 'add_custom_box' ] );
-        add_action( 'admin_menu', [ $this, 'options_menu' ] );
+        add_action( 'admin_menu', array( $this, 'add_custom_box' ) );
+        add_action( 'admin_menu', array( $this, 'options_menu' ) );
     }
 
     /**
@@ -142,7 +142,7 @@ class PageMenuEditor {
             $pattern = '@<li class="page_item page-item-(\d+)([^\"]*)"><a href=\"([^\"]+)" title="([^\"]+)">(.*?)</a>@is';
         endif;
 
-        return preg_replace_callback( $pattern, [ $this, 'callback' ], $content );
+        return preg_replace_callback( $pattern, array( $this, 'callback' ), $content );
     }
 
     /**
@@ -150,7 +150,7 @@ class PageMenuEditor {
      */
     function add_custom_box() {
         if( function_exists( 'add_meta_box' )) :
-            add_meta_box( 'pgmenueditor', __( 'Page Menu Editor' ), [ $this, 'custom_box' ], 'page', 'advanced', 'high' );
+            add_meta_box( 'pgmenueditor', __( 'Page Menu Editor' ), array( $this, 'custom_box' ), 'page', 'advanced', 'high' );
         endif;
     }
 
@@ -237,7 +237,7 @@ class PageMenuEditor {
      * Function to create the options menu page
      */
     function options_menu() {
-        add_options_page( 'Page Menu Editor', 'Page Menu Editor', 'update_plugins', 'pg-menu-editor-upgrade', [ $this, 'options' ] );
+        add_options_page( 'Page Menu Editor', 'Page Menu Editor', 'update_plugins', 'pg-menu-editor-upgrade', array( $this, 'options' ) );
     }
 
     /**
@@ -256,17 +256,17 @@ class PageMenuEditor {
                 $title_attribute = $result->meta_value;
             else :
                 $check = $attribute;
-                @$menu_label = $result->meta_value;
+                $menu_label = ! empty( $result->meta_value ) ? $result->meta_value : '';
             endif;
             
-            $lbl = $this->wpdb->get_row( $this->wpdb->prepare( "SELECT meta_value FROM {$wpdb->postmeta} WHERE meta_key = %s AND post_id = %d", $check, $result->post_id ) );
+            $lbl = $this->wpdb->get_row( $this->wpdb->prepare( "SELECT meta_value FROM " . $this->wpdb->postmeta . " WHERE meta_key = %s AND post_id = %d", $check, $result->post_id ) );
             if ( $result->meta_key == $attribute ) :
                 $menu_label = $lbl->meta_value;
             else :
-                @$title_attribute = $lbl->meta_value;
+                $title_attribute = ! empty( $lbl->meta_value ) ? $lbl->meta_value : '';
             endif;
 
-            $details = [ "menu_label" => $menu_label, "title_attribute" => $title_attribute ];
+            $details = array( "menu_label" => $menu_label, "title_attribute" => $title_attribute );
             update_post_meta( $result->post_id, 'dsa_pagemenueditor', $details );
             delete_post_meta( $result->post_id, $attribute );
             delete_post_meta( $result->post_id, $label );

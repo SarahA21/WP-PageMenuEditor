@@ -3,8 +3,8 @@ Contributors: sarahg111
 Donate link: http://www.stuffbysarah.net/wordpress-plugins/#donate
 Tags: pages, static, cms, sidebar, seo
 Requires at least: 2.5
-Tested up to: 4.7.5
-Stable tag: 3.0
+Tested up to: 4.8
+Stable tag: 3.0.1
 License: GPLv2 or later  
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -48,6 +48,10 @@ Then you don't need this plugin as you can control the anchor text and title att
 1. Screenshot of the additional text fields
 
 == Changelog ==
+
+= 3.0.1 =
+
+* Reverted the use of short syntax for arrays back to array() for PHP 5.3 compatibility
 
 = 3.0 =
 
